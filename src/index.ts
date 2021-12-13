@@ -1,6 +1,14 @@
 require("dotenv").config();
-import { App } from "@slack/bolt";
+import { App, SlackEventMiddlewareArgs, AllMiddlewareArgs } from "@slack/bolt";
 import Redis from "ioredis";
+
+interface MessageResponse {
+	message: any;
+}
+
+type SlackResponse = SlackEventMiddlewareArgs<"message"> &
+	AllMiddlewareArgs &
+	MessageResponse;
 
 const app = new App({
 	signingSecret: process.env.SLACK_SIGNING_SECRET,
@@ -11,8 +19,30 @@ const app = new App({
 
 const redis = new Redis();
 
-/* Add functionality here */
-app.message("add", async ({ message, say }: any) => {
+app.message(
+	"admin",
+	async ({ message, client, say }: SlackResponse): Promise<void> => {
+		const userRes = await client.users.info({ user: message.user });
+		if (userRes.user.is_admin) {
+			const queue = await redis.zrevrange("myset", 0, -1);
+			const users = [];
+
+			for (const value of queue) {
+				const user = await client.users.info({ user: value });
+				console.log(user);
+				users.push(
+					user.user.profile.display_name || user.user.profile.real_name
+				);
+			}
+
+			for (const value of users) {
+				await say(value);
+			}
+		}
+	}
+);
+
+app.message("add", async ({ message, say }: SlackResponse): Promise<void> => {
 	const r = await redis.exists("myset", message.user);
 	if (r) {
 		const rankRes = await redis.zrank("myset", message.user);
@@ -27,7 +57,7 @@ app.message("add", async ({ message, say }: any) => {
 		`Added <@${message.user}> to Q. You are in spot ${rankRes + 1} :tada:`
 	);
 });
-app.message("where", async ({ message, say }: any) => {
+app.message("where", async ({ message, say }: SlackResponse): Promise<void> => {
 	const res = await redis.zrank("myset", message.user);
 	//Queue is zero indexed so add one
 	const userRank = res + 1;
@@ -38,10 +68,13 @@ app.message("where", async ({ message, say }: any) => {
 	}
 });
 
-app.message("remove", async ({ message, say }: any) => {
-	await redis.zrem("myset", message.user);
-	await say(`Removed <@${message.user}> from queue`);
-});
+app.message(
+	"remove",
+	async ({ message, say }: SlackResponse): Promise<void> => {
+		await redis.zrem("myset", message.user);
+		await say(`Removed <@${message.user}> from queue`);
+	}
+);
 (async () => {
 	// Start the app
 	await app.start(3000);
