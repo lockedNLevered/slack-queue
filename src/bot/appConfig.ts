@@ -9,7 +9,7 @@ const app = new App({
 });
 
 const QUEUE = process.env.QUEUE as string;
-const redis = new Redis(parseInt(process.env.REDIS_PORT as string));
+const redis = new Redis(parseInt(process.env.REDIS_PORT as string) || 6379);
 
 export default app;
 export { QUEUE, redis };

@@ -12,7 +12,7 @@
   },
   "keywords": [],
   "author": "Shayne LaRochelle",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "@slack/bolt": "^3.8.1",
     "dotenv": "^10.0.0",

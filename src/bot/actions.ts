@@ -6,7 +6,7 @@ import {
 	rank,
 } from "../utils/helpers";
 import { SlackResponse } from "../utils/types";
-import app, { redis, QUEUE } from "./bot";
+import app, { redis, QUEUE } from "./appConfig";
 //documentation function explaining commands
 export const appHelp = () =>
 	app.message(
@@ -40,7 +40,6 @@ export const appQuery = () =>
 				for (const index in users) {
 					await say(`${parseInt(index) + 1}. ${users[index]}`);
 				}
-				console.log(users);
 			}
 		}
 	);
