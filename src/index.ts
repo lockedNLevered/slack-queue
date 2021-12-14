@@ -1,5 +1,6 @@
 require("dotenv").config();
 import { App, SlackEventMiddlewareArgs, AllMiddlewareArgs } from "@slack/bolt";
+import { UsersInfoResponse, WebClient } from "@slack/web-api";
 import Redis from "ioredis";
 
 interface MessageResponse {
@@ -19,17 +20,26 @@ const app = new App({
 
 const redis = new Redis();
 
+function getUser(
+	client: WebClient,
+	userId: string
+): Promise<UsersInfoResponse> {
+	return client.users.info({ user: userId });
+}
+
+async function isAdmin(client: WebClient, userId: string): Promise<boolean> {
+	const userRes = await getUser(client, userId);
+	return userRes.user.is_admin;
+}
+
 app.message(
 	"admin",
 	async ({ message, client, say }: SlackResponse): Promise<void> => {
-		const userRes = await client.users.info({ user: message.user });
-		if (userRes.user.is_admin) {
+		if (isAdmin(client, message.user)) {
 			const queue = await redis.zrevrange("myset", 0, -1);
 			const users = [];
-
 			for (const value of queue) {
-				const user = await client.users.info({ user: value });
-				console.log(user);
+				const user = await getUser(client, value);
 				users.push(
 					user.user.profile.display_name || user.user.profile.real_name
 				);
@@ -38,6 +48,24 @@ app.message(
 			for (const value of users) {
 				await say(value);
 			}
+		}
+	}
+);
+
+app.message(
+	"super",
+	async ({ message, client, say }: SlackResponse): Promise<void> => {
+		if (isAdmin(client, message.user)) {
+			//parse userId from message and remove special chars
+			const userId = message.text.split(" ")[2].replace(/[<>@]/g, "");
+			const user = await getUser(client, userId);
+			const remove = await redis.zrem("myset", userId);
+			console.log(remove);
+			await say(
+				`${
+					user.user.profile.display_name || user.user.profile.real_name
+				} has been removed from the queue`
+			);
 		}
 	}
 );
@@ -57,16 +85,22 @@ app.message("add", async ({ message, say }: SlackResponse): Promise<void> => {
 		`Added <@${message.user}> to Q. You are in spot ${rankRes + 1} :tada:`
 	);
 });
-app.message("where", async ({ message, say }: SlackResponse): Promise<void> => {
-	const res = await redis.zrank("myset", message.user);
-	//Queue is zero indexed so add one
-	const userRank = res + 1;
-	if (userRank) {
+app.message(
+	"where ",
+	async ({ message, say }: SlackResponse): Promise<void> => {
+		const r = await redis.exists("myset", message.user);
+		if (!r) {
+			say("You are not in the Q");
+			return;
+		}
+		const res = await redis.zrank("myset", message.user);
+		console.log(res);
+		//Queue is zero indexed so add one
+		const userRank = res + 1;
+
 		say(`You're ${userRank} spots away`);
-	} else {
-		say("You're not in the Q");
 	}
-});
+);
 
 app.message(
 	"remove",
