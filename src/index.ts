@@ -23,7 +23,7 @@ app.message(
 						type: "section",
 						text: {
 							type: "mrkdwn",
-							text: `Hello <@${message.user}>! I see that you are an admin. Below is a list of commands you can use:`,
+							text: `Hello <@${message.user}>! I see that you are an admin. Below is a list of commands:`,
 						},
 					},
 					{
@@ -49,7 +49,7 @@ app.message(
 						fields: [
 							{
 								type: "mrkdwn",
-								text: "*insert*\nAdds a user to the queue :sparkles:\n*Usage:*\n@MentionBot insert @user_to_add",
+								text: "*insert*\nAdds a user to the queue :sparkles:\n*@MentionBot insert @user_to_add*",
 							},
 						],
 					},
@@ -58,7 +58,7 @@ app.message(
 						fields: [
 							{
 								type: "mrkdwn",
-								text: "*delete*\nRemoves a user from the queue :sparkles:\n*Usage:*\n@MentionBot delete @user_to_add",
+								text: "*delete*\nRemoves a user from the queue :sparkles:\n*@MentionBot delete @user_to_remove*",
 							},
 						],
 					},
@@ -85,7 +85,7 @@ app.message(
 						fields: [
 							{
 								type: "mrkdwn",
-								text: "*remove*\nRemove yourself to the queue :wave:",
+								text: "*remove*\nRemove yourself from the queue :wave:",
 							},
 						],
 					},
@@ -129,7 +129,7 @@ app.message(
 					fields: [
 						{
 							type: "mrkdwn",
-							text: "*remove*\nRemove yourself to the queue :wave:",
+							text: "*remove*\nRemove yourself from the queue :wave:",
 						},
 					],
 				},
