@@ -7,10 +7,11 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "ts-node src/index.ts",
     "dev": "ts-node-dev src/index.ts",
-    "redis": "memurai"
+    "redis": "memurai",
+    "build": "tsc"
   },
   "keywords": [],
-  "author": "",
+  "author": "Shayne LaRochelle",
   "license": "ISC",
   "dependencies": {
     "@slack/bolt": "^3.8.1",
@@ -18,6 +19,7 @@
     "ioredis": "^4.28.2"
   },
   "devDependencies": {
+    "@types/ioredis": "^4.28.4",
     "nodemon": "^2.0.15",
     "ts-node-dev": "^1.1.8",
     "typescript": "^4.5.3"

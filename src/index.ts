@@ -3,6 +3,7 @@ import { App } from "@slack/bolt";
 import Redis from "ioredis";
 import { isAdmin, getUser, isInQueue, rank } from "./utils/helpers";
 import { SlackResponse } from "./utils/types";
+
 const app = new App({
 	signingSecret: process.env.SLACK_SIGNING_SECRET,
 	token: process.env.SLACK_BOT_TOKEN,
