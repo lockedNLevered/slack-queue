@@ -3,7 +3,6 @@ import { App } from "@slack/bolt";
 import Redis from "ioredis";
 import { isAdmin, getUser, isInQueue, rank } from "./utils/helpers";
 import { SlackResponse } from "./utils/types";
-import documentation from "./data/documentation.json";
 const app = new App({
 	signingSecret: process.env.SLACK_SIGNING_SECRET,
 	token: process.env.SLACK_BOT_TOKEN,
@@ -13,10 +12,143 @@ const app = new App({
 const QUEUE = process.env.QUEUE as string;
 const redis = new Redis();
 
-app.message("help", async ({ message, say }: SlackResponse): Promise<void> => {
-	await say(documentation);
-});
+//documentation function explaining commands
+app.message(
+	"help",
+	async ({ message, client, say }: SlackResponse): Promise<void> => {
+		if (await isAdmin(client, message.user)) {
+			await say({
+				blocks: [
+					{
+						type: "section",
+						text: {
+							type: "mrkdwn",
+							text: `Hello <@${message.user}>! I see that you are an admin. Below is a list of commands you can use:`,
+						},
+					},
+					{
+						type: "section",
+						fields: [
+							{
+								type: "mrkdwn",
+								text: "*Admin only commands:*",
+							},
+						],
+					},
+					{
+						type: "section",
+						fields: [
+							{
+								type: "mrkdwn",
+								text: "*query*\nSee everybody in the queue :sparkles:",
+							},
+						],
+					},
+					{
+						type: "section",
+						fields: [
+							{
+								type: "mrkdwn",
+								text: "*insert*\nAdds a user to the queue :sparkles:\n*Usage:*\n@MentionBot insert @user_to_add",
+							},
+						],
+					},
+					{
+						type: "section",
+						fields: [
+							{
+								type: "mrkdwn",
+								text: "*delete*\nRemoves a user from the queue :sparkles:\n*Usage:*\n@MentionBot delete @user_to_add",
+							},
+						],
+					},
+					{
+						type: "section",
+						fields: [
+							{
+								type: "mrkdwn",
+								text: "*Generic commands:*",
+							},
+						],
+					},
+					{
+						type: "section",
+						fields: [
+							{
+								type: "mrkdwn",
+								text: "*add*\nAdd yourself to the queue :rocket:",
+							},
+						],
+					},
+					{
+						type: "section",
+						fields: [
+							{
+								type: "mrkdwn",
+								text: "*remove*\nRemove yourself to the queue :wave:",
+							},
+						],
+					},
+					{
+						type: "section",
+						fields: [
+							{
+								type: "mrkdwn",
+								text: "*where*\nCheck your spot in the queue :crystal_ball:",
+							},
+						],
+					},
+				],
+			});
+			return;
+		}
 
+		await say({
+			blocks: [
+				{
+					type: "section",
+					text: {
+						type: "mrkdwn",
+						text: "Hello! Below you will find a list of commands you can use:",
+					},
+				},
+
+				{
+					type: "section",
+					block_id: "section789",
+					fields: [
+						{
+							type: "mrkdwn",
+							text: "*add*\nAdd yourself to the queue :rocket:",
+						},
+					],
+				},
+				{
+					type: "section",
+					block_id: "section790",
+					fields: [
+						{
+							type: "mrkdwn",
+							text: "*remove*\nRemove yourself to the queue :wave:",
+						},
+					],
+				},
+				{
+					type: "section",
+					block_id: "section791",
+					fields: [
+						{
+							type: "mrkdwn",
+							text: "*where*\nCheck your spot in the queue :crystal_ball:",
+						},
+					],
+				},
+			],
+		});
+		return;
+	}
+);
+//ADMIN -> displays users in the Queue with their human readable index
 app.message(
 	"query",
 	async ({ message, client, say }: SlackResponse): Promise<void> => {
@@ -39,7 +171,7 @@ app.message(
 		}
 	}
 );
-
+//ADMIN -> deletes a user by name from the queue
 app.message(
 	"delete",
 	async ({ message, client, say }: SlackResponse): Promise<void> => {
@@ -50,6 +182,7 @@ app.message(
 		}
 	}
 );
+//ADMIN -> inserts a user by name into the queue
 app.message(
 	"insert",
 	async ({ message, client, say }: SlackResponse): Promise<void> => {
@@ -61,7 +194,7 @@ app.message(
 		}
 	}
 );
-
+//adds the sender into the queue
 app.message("add", async ({ message, say }: SlackResponse): Promise<void> => {
 	if (await isInQueue(redis, QUEUE, message.user)) {
 		const rankRes = await rank(QUEUE, redis, message.user);
@@ -76,6 +209,7 @@ app.message("add", async ({ message, say }: SlackResponse): Promise<void> => {
 		`Added <@${message.user}> to Q. You are in spot ${rankRes + 1} :tada:`
 	);
 });
+//displays the senders current position in the queue or notifies them they are not in the queue
 app.message("where", async ({ message, say }: SlackResponse): Promise<void> => {
 	if (!(await isInQueue(redis, QUEUE, message.user))) {
 		say("You are not in the Q");
@@ -86,7 +220,7 @@ app.message("where", async ({ message, say }: SlackResponse): Promise<void> => {
 	const userRank = rankRes + 1;
 	say(`You're ${userRank} spots away`);
 });
-
+//removes the sender form the queue
 app.message(
 	"remove",
 	async ({ message, say }: SlackResponse): Promise<void> => {
@@ -95,8 +229,7 @@ app.message(
 	}
 );
 (async () => {
-	// Start the app
 	await app.start(3000);
 
-	console.log("⚡️ Bolt app is running!");
+	console.log("app is running!");
 })();
